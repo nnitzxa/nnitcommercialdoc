@@ -1,0 +1,56 @@
+针对MySQL的Redis数据对象设计
+
+Redis中存储的数据是实时的。针对“会员”的信息，会员的基本信息会放在Redis的内存中，
+积分交易信息不存放在Redis中。
+
+1. Accounts
+
+1.1 会员信息
+	
+	Member表： 
+	        1. 采用的Redis数据结构： Hash
+			2. 格式
+			    Key： Member: memberId
+			  value:
+			        Key: columName
+			      value: columValue
+
+			  |-- Member:memberId ------hash-|
+			  |   column : value             |
+              |------------------------------|
+
+1.2 会员订单信息
+	Order表：
+	        1. 采用的Redis数据结构：List
+	        2. 格式
+	            Key: Order:MemberId
+	          value: GOODS_ID:ORDER_DATETIME:AMOUNT:STATUS
+
+	          |-- Order:MemberId -------------------- List -|
+	          |   ID:GOODS_ID:ORDER_DATETIME:AMOUNT:STATUS  |
+	          |---------------------------------------------|
+
+1.3 会员积分
+	Integral表：
+			1. 采用的Redis数据结构：String
+			2. 格式
+				key: Integral:MemberId
+			  value: Balance
+
+			  |-- Integral:MemberId ------- String-|
+			  |   Balance                          |
+			  |------------------------------------|
+
+2. 字典表
+   字典表的数据不多，每条记录都作为Redis中的一个元素放在内存中
+2.1 
+	TypeAndStatus表
+
+	1. 采用的Redis数据结构：String
+	2. 格式
+		  Key: TypeAndStatus:TypeAndStatusId
+		Value: LABEL:SHORT_LABEL
+
+		|-- TypeAndStatus:typeAndStatusId --- String-|
+		|   LABEL:SHORT_LABEL                        |
+		|--------------------------------------------|
