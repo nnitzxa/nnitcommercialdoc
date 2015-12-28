@@ -41,6 +41,17 @@ Redis中存储的数据是实时的。针对“会员”的信息，会员的基
 			  |   Balance                          |
 			  |------------------------------------|
 
+1.4 会员优惠券
+	Couponbackage表：
+			1. 采用的Redis数据结构： Set
+			2. 格式
+				key：Couponbackage:MemberId
+			  value: id
+
+			  |-- Couponbackage:MemberId ----- Set----|
+			  |   Id                                  |
+			  |---------------------------------------|
+
 2. 字典表
    字典表的数据不多，每条记录都作为Redis中的一个元素放在内存中
 2.1 
