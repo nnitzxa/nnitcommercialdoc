@@ -1,0 +1,341 @@
+Redis实验数据
+1. String
+	
+	Key  |  Velue: 任何的数据类型。 一个字符串类型的值最多能存储512M字节的内容。（图片，或者一个序列化的对象，都可以认为是一个String）
+
+	|- Key -------------- String-|
+	|  String Value              |
+	|----------------------------|
+
+	基本操作：
+
+	                   set key value #把String类型的数据放置在Redis里，并设置一个Key
+                
+                             get key #取值，返回值是对应键的值
+                    
+                            incr key #递增数字，虽然是字符串类型，但如果可以是整型的话，也是可以使用此命令递增的，返回值是递增后的值（Redis会自动判断value类型）
+                
+                   incrby key number #这个命令和上一个类似，只不过可以通过number指定增长的数量，返回值同样是增长后的值
+                
+                            decr key #递减数字，类似递增，这里不做过多解释了
+                
+                   decrby key number #类似于incrby，这里大家应该可以猜到，decrby key number和incrby key -number是一个意思
+          
+         incrbyfloat key floatnumber #增加指定浮点数，这个是增加一个双精度的浮点数，位数多了就会不准
+          
+                    append key value #向尾部追加值，如 append foo " value"，这个时候用引号是为了标识有空格，返回值为值的总长度
+          
+                         strlen key  #获取字符串值总长度，返回值就是长度，如果key不存在，则返回0
+          
+                  mget key [key ...] #同时获得多个键值，键值的列表
+    
+      mset key value [key value ...] #同时设置多个键值，成功返回OK
+
+    -----------------------------------
+
+    Test Data: 
+
+    	        set jalyString 1
+	               
+    	        get jalyString
+	              
+    	       incr jalyString
+	     
+    	     incrby jalyString 6
+	     
+    	       decr jalyString
+	     
+    	     decrby jalyString 6
+	
+    	incrbyfloat jalyString 3.8
+	
+    	     append jalyString " 988"
+	          
+    	     strlen jalyString
+
+    	        set jalyString2 3
+
+    	       mget jalyString jalyString2
+
+    	       mset jaly1 1 jaly2 2 jaly3 3
+
+2. List （列表）
+	
+	Key  | Value:  简单的字符串(任何的数据类型)列表，按照插入顺序排序
+	               可以添加一个元素到列表的头部（左边）或者尾部（右边）
+
+	|- Key -------------- List---|
+	|  Value_1                   |
+	|  Value_2                   |
+	|  Value_3                   |
+	|  .......                   |
+	|----------------------------|
+
+	基本操作：
+
+		 lpush key value [value ...] # 从列表左边插入一个（系列）值
+  
+         rpush key value [value ...] # 从列表右边插入一个（系列）值
+ 
+                            lpop key # 从左边弹出一个值
+                    
+                            rpop key # 从右边弹出一个值
+ 
+                            llen key # 计算列表长度
+ 
+               lrange key start stop # 提取从start到stop结束的元素， start和stop都是从0开始
+                                       start和stop还支持负数，表示从右边开始提取数据
+                                       注意：1. 是闭区间，即[start, stop]
+                                             2. 取全部数据，采用： lrange key 0 -1
+ 
+                lrem key count value # 命令会删除列表中前count个值为value的元素，返回实际删除的元素个数
+                                       注意：
+                                             1. count > 0 : 从列表左边开始删除前count个值为value的元素
+                                             2. count < 0 : 从右边开始删除
+                                             3. count = 0 : 删除所有
+ 
+                    lindex key index # 获取指定索引的元素值
+ 
+                lset key index value # 设置指定索引的元素值
+ 
+                                       注意： index可以为负数，表示从右边开始计算
+ 
+                ltrim key start stop # 只保留列表中指定的片段
+
+linsert key before|after pivot value # 把值插入到列表中
+
+        rpoplpush source destination # 将元素从一个列表转储到另一个列表
+
+    -----------------------------------
+
+    Test Data
+
+        lpush numbers 0
+
+        lpush numbers 1
+
+        rpush numbers -1 -2
+
+        lpop numbers  (结果是：1)
+
+        rpop numbers  (结果是：-2)
+
+        llen numbers  (结果是2， 已经pop了2个值)
+
+        lpush numbers 11 12 13 14
+
+        lrange numbers 0 4   (结果： 14 13 12 11 0)
+
+        lrange numbers -2 -1 (结果：0 -1 )
+
+        lrange numbers 0 -1  (结果： 14 13 12 11 0 -1)
+
+        lrem numbers 1 11
+
+        lrange numbers 0 -1  (结果： 14 13 12 0 -1)
+
+        lindex numbers 0 
+
+        lset numbers 0 15
+
+        ltrim numbers 1 3    (列表中还有： 13 12 0)
+
+        linsert numbers before 13 1  (列表： 1 13 12 0)
+
+        linsert numbers after 13 2   (列表： 1 13 2 12 0)
+
+        rpoplpush numbers jalynumbers
+
+3. Sets （集合）
+
+	Key | Value: 无序的字符串(任何的数据类型)合集
+
+	|- Key -------------- Set----|
+	|  Value_1                   |
+	|  Value_2                   |
+	|  Value_3                   |
+	|  .......                   |
+	|----------------------------|
+
+
+	基本操作：
+
+		 sadd key number [number ...] # 增加一个元素
+ 
+		 srem key number [number ...] # 删除一个元素
+ 
+		                 smembers key # 获取集合所有元素
+ 
+		         sismember key number # 判断元素是否在集合中（1：存在，0：不存在）
+ 
+		          sdiff key [key ...] # 多个集合做“差集”操作
+ 
+		         sinter key [key ...] # 多个集合做“交集”操作
+ 
+		         sunion key [key ...] # 多个集合做“并集”操作
+ 
+		                    scard key # 获取集合中元素个数
+
+ sdiffstore destination key [key ...] # 多个集合做“差集”操作的结果存储到destination中
+
+sinterstore destination key [key ...] # 多个集合做“交集”操作的结果存储到de
+
+sunionstore destination key [key ...] # 多个集合做“并集”操作的结果存储到de
+
+              srandmember key [count] # 随机获取集合中的元素
+		                                
+		                                注意：
+		                                  	   1. count > 0 : 获取count个不重复的元素
+		                                  	   2. count < 0 : 获取|count|个元素，但可能相同
+
+		                     spop key # 随机弹出一个元素
+
+	-----------------------------------
+
+	Test Data
+
+		sadd seta 1 2 3
+
+		sadd setb 2 3 4
+
+		sadd setc 1 2 5
+
+		sdiff seta setb
+
+		sdiff setb seta
+
+		sdiff seta setb setc
+
+		sinter seta setb
+
+		sinter seta setb setc
+
+		sunion seta setb
+
+		sunion seta setb setc
+
+4. Hash （哈希）
+
+	key | Value: 字符串字段和字符串值之间的映射，所以它们是完美的表示对象（eg:一个有名，姓，年龄等属性的用户）的数据类型
+
+	|- KEY -------------------- Hash---|
+	|    field_1     | value           |
+	|    field_2     | value           |
+	|    field_3     | value           |
+	|    ......                        |
+	|----------------------------------|
+
+
+	基本操作：
+
+	  hmset key field value [field value ...] # （批量）设置值
+
+	                     hset key field value # 单独设置某个Key中的一个键值对
+
+		           hget key field [field ...] # (批量）提取值
+
+		                          hgetall key # 提取Key对应的所有键值对列表
+
+						    hexists key field # 判断是否存在 （1：存在；0：不存在）
+
+					   hsetnx key field value # 如果字段不存在，直接赋值；存在，不执行
+
+					 hincrby key field number # 增加数字
+
+				   hdel key field [field ...] # 删除字段，一个或者多个
+
+				                    hkeys key # 获取字段名
+                 
+				                    hvals key # 获取字段值
+
+				                     hlen key # 返回字段的数量
+	
+	-----------------------------------
+
+	Test Data   
+
+		hmset post:1 title "the first post" author jaly time 2015-12-31 content "This is my first post"
+
+		hget post:1 title
+
+		hgetall post:1
+
+		hset post:1 title "the first CHANGE post"
+
+		hsetnx post:1 fans 1
+
+		hsetnx post:1 fans 2
+
+		hkeys post:1
+
+		hvals post:1
+
+		hlen post:1
+
+5. Sorted Sets（有序集合）
+
+	key | Value: Redis有序集合和Redis集合类似，是不包含 相同字符串的合集。
+	             它们的差别是，每个有序集合 的成员都关联着一个评分，这个评分用于把有序集 合中的成员按最低分到最高分排列。
+
+	 |- KEY ----------------- SortedSet-|
+	 |    value_1     | score_1         |
+	 |    value_2     | score_2         |
+	 |    value_3     | score_3         |
+	 |    ......                        |
+	 |----------------------------------|
+
+	基本操作：
+
+		ZADD key score member [score member ...] # 增加元素
+
+		                       ZSCORE key member # 获得元素的分数
+
+		                   ZRANGE key start stop # 按照元素分数的从小到大顺序返回索引从start到stop之间所有的元素（包含两端）
+
+		                ZREVRANGE key start stop # 按照元素分数的从大到小顺序返回索引从start到stop之间所有的元素（包含两端）
+
+		                ZRANGEBYSCORE key min max [WITHSCORES] [LIMIT offset count] # 获得指定分数范围的元素
+		                						   说明： 这个命令用来获取指定分数范围的元素，min是最小值，max是最大值，
+		                						          WITHSCORE还是和上面介绍的一样，LIMIT是为了指定偏移量及数量的，
+		                						          和sql的有点像。offset是偏移量，count是数量。同时这些min和max都是包含的，
+		                						          如果要想不包含，需要使用“(”符号
+
+		            ZINCRBY key incremnet member # 增加某个元素的分数
+
+		                               ZCARD key # 获取集合中元素的数量
+
+		                      ZCOUNT key min max # 获取指定分数范围的元素个数
+
+		            ZREM key member [member ...] # 删除一个或多个元素
+
+		          ZREMRANGEBYRANK key start stop # 按照排名范围删除元素
+
+		            ZREMRANGEBYSCORE key min max # 按照分数范围删除元素
+
+		                        ZRANK key member # 获得按照元素分数从小到大的顺序排名（从0开始）
+         
+		                     ZREVRANK key member # 获得按照元素分数从大到小的顺序排名
+
+	-----------------------------------
+
+	Test Data   
+
+		zadd scoreboard 89 Tom 67 Peter 100 David
+
+		zrange scoreboard 0 -1
+
+		zadd scoredboard 91 Peter
+
+		zrange scoreboard 0 -1
+
+		zscore scoreboard Tom
+
+		zrevrange scoreboard 0 -1
+
+		zrevrange scoreboard 0 -1 withscores
+
+		zrangebyscore scoreboard 80 100
+
+		zrangebyscore scoreboard 80 (100
+
+		zrangebyscore scoreboard 80 100 LIMIT 1 1
