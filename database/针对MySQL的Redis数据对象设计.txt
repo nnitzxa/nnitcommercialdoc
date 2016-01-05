@@ -18,17 +18,25 @@ Redis中存储的数据是实时的。针对“会员”的信息，会员的基
 			  |-- Member:memberId ------hash-|
 			  |   column : value             |
               |------------------------------|
+			
+			3. 存储原则
+               所有新注册的会员的都放在Redis的内存中。
+               过期时间为24小时。
 
 1.2 会员订单信息
 	Order表：
 	        1. 采用的Redis数据结构：List
 	        2. 格式
 	            Key: Order:MemberId
-	          value: GOODS_ID:ORDER_DATETIME:AMOUNT:STATUS
+	          value: GOODS_ID
 
-	          |-- Order:MemberId -------------------- List -|
-	          |   ID:GOODS_ID:ORDER_DATETIME:AMOUNT:STATUS  |
-	          |---------------------------------------------|
+	          |-- Order:MemberId ---- List -|
+	          |   GOODS_ID                  |
+	          |-----------------------------|
+			  
+		    3. 存储原则
+			  每个新生成的Order数据，存储在Redis的内存。
+			  每条Order数据的过期时间为30分钟。
 
 1.3 会员积分
 	Integral表：
@@ -40,6 +48,13 @@ Redis中存储的数据是实时的。针对“会员”的信息，会员的基
 			  |-- Integral:MemberId ------- String-|
 			  |   Balance                          |
 			  |------------------------------------|
+			  
+			3. 存储原则
+			   每个人有默认的一个Integral(balance = 0)。
+			   但是，初始化时，Redis中不存储此对象。只有用户
+			   查看Integral时才从Database里提取，并存在Redis
+			   中。
+			   每个用户的Integral的数据的过期时间为10分钟。
 
 1.4 会员优惠券
 	Couponbackage表：
@@ -51,17 +66,64 @@ Redis中存储的数据是实时的。针对“会员”的信息，会员的基
 			  |-- Couponbackage:MemberId ----- Set----|
 			  |   Id                                  |
 			  |---------------------------------------|
+			  
+			3. 存储原则
+			   用户在领用优惠券时才把数据放在Redis的内存中。
+			   如果用户已经有了一些优惠券，如果Redis中没有相关
+			   记录，则此时再去Database中load数据到redis中。
+			   每个用户的Couponbackage数据的过期时间为10分钟。
 
-2. 字典表
+2. 商铺表
+
+2.1 商铺
+    Shop表：
+        1. 采用的Redis数据结构：Hash
+        2. 格式
+             Key： Shop: shopId
+		   value:
+			        Key: columName
+			      value: columValue
+
+			  |-- Shop: shopId ------hash-|
+			  |   column : value          |
+              |---------------------------|
+			
+	    3. 存储原则
+           所有新注册的商铺的都放在Redis的内存中。
+           过期时间为24小时。
+               
+2.2 商铺折扣
+    discount表：
+        1. 采用的Redis数据结构：
+           
+
+3. 字典表
    字典表的数据不多，每条记录都作为Redis中的一个元素放在内存中
-2.1 
-	TypeAndStatus表
+3.1 
+	Type_Status表
+	    1. 采用的Redis数据结构：String
+	    2. 格式
+		    Key: TypeAndStatus:TypeAndStatusId
+		  Value: LABEL
 
-	1. 采用的Redis数据结构：String
-	2. 格式
-		  Key: TypeAndStatus:TypeAndStatusId
-		Value: LABEL:SHORT_LABEL
-
-		|-- TypeAndStatus:typeAndStatusId --- String-|
-		|   LABEL:SHORT_LABEL                        |
-		|--------------------------------------------|
+		      |-- TypeAndStatus:typeAndStatusId --- String-|
+		      |   LABEL                                    |
+		      |--------------------------------------------|
+              
+        3. 存储原则
+           表中的所有数据在系统启动时，就装在到Redis的内存中，
+           并永不过期
+        
+3.2 商铺类别
+    Category表
+        1. 采用的Redis数据结构：String
+        2. 格式
+             Key: Category:categoryId
+           value: Label
+              |-- Category:categoryId --- String-|
+		      |   LABEL                          |
+		      |----------------------------------|
+              
+        3. 存储原则
+           表中的所有数据在系统启动时，就装在到Redis的内存中，
+           并永不过期
