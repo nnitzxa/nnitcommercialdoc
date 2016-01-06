@@ -10,7 +10,7 @@ Redis中存储的数据是实时的。针对“会员”的信息，会员的基
 	Member表： 
 	        1. 采用的Redis数据结构： Hash
 			2. 格式
-			    Key： Member: memberId
+			    Key： Member: memberId (id要替换)
 			  value:
 			        Key: columName
 			      value: columValue
@@ -27,7 +27,7 @@ Redis中存储的数据是实时的。针对“会员”的信息，会员的基
 	Order表：
 	        1. 采用的Redis数据结构：List
 	        2. 格式
-	            Key: Order:MemberId
+	            Key: Order:MemberId (id要替换)
 	          value: GOODS_ID
 
 	          |-- Order:MemberId ---- List -|
@@ -60,7 +60,7 @@ Redis中存储的数据是实时的。针对“会员”的信息，会员的基
 	Couponbackage表：
 			1. 采用的Redis数据结构： Set
 			2. 格式
-				key：Couponbackage:MemberId
+				key：Couponbackage:MemberId (id要替换)
 			  value: id
 
 			  |-- Couponbackage:MemberId ----- Set----|
@@ -79,7 +79,7 @@ Redis中存储的数据是实时的。针对“会员”的信息，会员的基
     Shop表：
         1. 采用的Redis数据结构：Hash
         2. 格式
-             Key： Shop: shopId
+             Key： Shop: shopId (id要替换)
 		   value:
 			        Key: columName
 			      value: columValue
@@ -94,8 +94,33 @@ Redis中存储的数据是实时的。针对“会员”的信息，会员的基
                
 2.2 商铺折扣
     discount表：
-        1. 采用的Redis数据结构：
+        1. 采用的Redis数据结构：Hash
+        2. 格式
+            Key: Discount:discountId (id要替换)
+          value:
+                 Key: production_ID
+               value: DISCOUNT_VALUE
+               
+           |-- Discount:discountId ------hash---|
+		   |   production_ID : DISCOUNT_VALUE   |
+           |------------------------------------|
            
+        3. 存储原则
+           新增加的折扣信息会进入Redis内存。
+           过期时间为24小时。
+    ++++++++++++++++++++++++++++++++++++++++++++++++++      
+    
+    discount表：
+        0. 作用：APP用户通过折扣力度来排序
+        1. 采用的Redis数据结构：Sorted Sets
+        2. 格式
+            key: discounts
+          value: discounts:discountSort
+          
+           |-- Discount:discountSort ------zset-|
+		   |   discountId : discount_value      |
+           |------------------------------------|
+        
 
 3. 字典表
    字典表的数据不多，每条记录都作为Redis中的一个元素放在内存中
