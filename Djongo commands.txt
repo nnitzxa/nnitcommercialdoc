@@ -1,0 +1,22 @@
+创建project
+django-admin startproject commercial_app_manage
+
+创建APP
+python manage.py startapp market_manage
+python manage.py startapp shop_manage
+
+
+启动server
+python manage.py runserver
+
+同步数据库
+python manage.py makemigrations
+python manage.py migrate
+
+
+安装pymysql
+进入PyMySQL-master文件夹
+python setup.py install
+_init_.py 中加入：
+import pymysql
+pymysql.install_as_MySQLdb()
