@@ -45,7 +45,7 @@ COMMENT = '会员基本信息表';
 -- Table `shoppingmall`.`Integral`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `shoppingmall`.`Integral` (
-  `ID` VARCHAR(48) GENERATED ALWAYS AS () VIRTUAL,
+  `ID` VARCHAR(48) NOT NULL COMMENT '主键',
   `BALANCE` INT NOT NULL DEFAULT 0 COMMENT '当前可用积分总数 （积分都是整数）',
   `EXPIRED_DATE` DATETIME NULL COMMENT '积分过期时间',
   `MEMBER_ID` VARCHAR(48) NOT NULL COMMENT '积分归属于哪个用户',
@@ -64,7 +64,7 @@ COMMENT = '积分表';
 -- Table `shoppingmall`.`IntegralTransaction`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `shoppingmall`.`IntegralTransaction` (
-  `ID` VARCHAR(48) GENERATED ALWAYS AS () VIRTUAL,
+  `ID` VARCHAR(48) NOT NULL COMMENT '主键',
   `AMOUNT` INT NOT NULL COMMENT '交易使用的积分',
   `TRX_TYPE_ID` VARCHAR(48) NOT NULL COMMENT '交易类型：购买、撤回 ',
   `TRX_DATETIME` DATETIME NOT NULL COMMENT '交易日期时间',
@@ -86,7 +86,7 @@ COMMENT = '会员积分交易记录表';
 -- Table `shoppingmall`.`Couponbackage`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `shoppingmall`.`Couponbackage` (
-  `ID` VARCHAR(48) GENERATED ALWAYS AS () VIRTUAL,
+  `ID` VARCHAR(48) NOT NULL COMMENT '主键',
   `CODE` VARCHAR(45) NULL COMMENT '优惠券的编码. 这个编码需要在APP端生成条码或者二维码（建议用二维码）\n这个编码必须和“discount_user”表中的code一样',
   `COUPON_TYPE` VARCHAR(48) NULL COMMENT '优惠券类型：\n团购券\n优惠券\n活动券\n礼品兑换券',
   `STATUS_ID` VARCHAR(48) NULL COMMENT '优惠券的状态\n未使用\n已使用\n过期',
@@ -129,7 +129,7 @@ COMMENT = '用户普通交易（非积分）的记录';
 -- Table `shoppingmall`.`type_status`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `shoppingmall`.`type_status` (
-  `ID` VARCHAR(48) NOT NULL,
+  `ID` VARCHAR(48) NOT NULL COMMENT '主键',
   `LABEL` VARCHAR(20) NULL COMMENT '类型或者状态的名称',
   `SHORT_LABEL` VARCHAR(10) NULL COMMENT '类型或者状态的简称')
 ENGINE = InnoDB
@@ -140,7 +140,7 @@ COMMENT = '字典表。用来记录各种类型+状态';
 -- Table `shoppingmall`.`Category`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `shoppingmall`.`Category` (
-  `ID` VARCHAR(48) NOT NULL,
+  `ID` VARCHAR(48) NOT NULL COMMENT '主键',
   `LABEL` VARCHAR(45) NULL COMMENT '类别名称',
   PRIMARY KEY (`ID`))
 ENGINE = InnoDB
@@ -151,7 +151,7 @@ COMMENT = '商户的类别';
 -- Table `shoppingmall`.`shop`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `shoppingmall`.`shop` (
-  `ID` VARCHAR(48) NOT NULL,
+  `ID` VARCHAR(48) NOT NULL COMMENT '主键',
   `SHOP_NAME` VARCHAR(255) NOT NULL COMMENT '商铺名称',
   `FLOOR` INT(11) NOT NULL COMMENT '商户所在楼层',
   `LOCATION` VARCHAR(255) NOT NULL COMMENT '商铺的铺位号（目前就是一个文字描述）',
@@ -186,7 +186,7 @@ DEFAULT CHARACTER SET = utf8;
 -- Table `shoppingmall`.`evaluation`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `shoppingmall`.`evaluation` (
-  `ID` VARCHAR(48) NOT NULL,
+  `ID` VARCHAR(48) NOT NULL COMMENT '主键',
   `SCORE` FLOAT NULL DEFAULT 1.0 COMMENT '商户的综合评分。是一个一位的小数。例如：8.6',
   `CONTENT` TEXT NOT NULL COMMENT '评论内容',
   `POST_TIME` DATETIME NOT NULL COMMENT '发表时间',
@@ -215,7 +215,7 @@ COMMENT = '用户对商家的评论';
 -- Table `shoppingmall`.`Groupon`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `shoppingmall`.`Groupon` (
-  `ID` VARCHAR(48) NOT NULL,
+  `ID` VARCHAR(48) NOT NULL COMMENT '主键',
   `SHOP_ID` VARCHAR(48) NOT NULL COMMENT '团购活动所属的商铺',
   `TITLE` VARCHAR(100) NOT NULL COMMENT '团购活动的标题',
   `PICTURE` VARCHAR(300) NULL COMMENT '团购活动的宣传图片（指向一个云存储的URI）',
@@ -239,7 +239,7 @@ COMMENT = '团购活动';
 -- Table `shoppingmall`.`Groupon_order`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `shoppingmall`.`Groupon_order` (
-  `ID` VARCHAR(48) NOT NULL,
+  `ID` VARCHAR(48) NOT NULL COMMENT '主键',
   `GROUPON_ID` VARCHAR(48) NOT NULL COMMENT '该团购交易对应的团购活动',
   `CREATE_TIME` DATETIME NOT NULL COMMENT '此订单产生的时间',
   `AMOUNT` DECIMAL(10,2) NOT NULL COMMENT '此次团购的总金额',
@@ -290,7 +290,7 @@ COMMENT = '商品表';
 -- Table `shoppingmall`.`discount`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `shoppingmall`.`discount` (
-  `ID` VARCHAR(48) NOT NULL,
+  `ID` VARCHAR(48) NOT NULL COMMENT '主键',
   `TITLE` VARCHAR(100) NULL COMMENT '优惠活动的名称',
   `PICTURE` VARCHAR(200) NULL COMMENT '优惠活动的图片（指向云存储的一个UIR）',
   `START_DATE` DATE NULL COMMENT '优惠活动开始日期',
@@ -315,7 +315,7 @@ COMMENT = '优惠活动（促销规则）';
 -- Table `shoppingmall`.`favorit_shop`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `shoppingmall`.`favorit_shop` (
-  `ID` VARCHAR(48) NULL COMMENT '唯一标识',
+  `ID` VARCHAR(48) NOT NULL COMMENT '唯一标识',
   `SHOP_ID` VARCHAR(48) NOT NULL,
   `MEMBER_ID` VARCHAR(48) NOT NULL,
   PRIMARY KEY (`SHOP_ID`, `MEMBER_ID`),
@@ -339,7 +339,7 @@ DEFAULT CHARACTER SET = utf8;
 -- Table `shoppingmall`.`order_product`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `shoppingmall`.`order_product` (
-  `ID` VARCHAR(48) NULL COMMENT '表记录编号',
+  `ID` VARCHAR(48) NOT NULL COMMENT '表记录编号',
   `PRODUCT_ID` VARCHAR(48) NOT NULL COMMENT '购买的商品编号',
   `ORDER_ID` VARCHAR(48) NOT NULL COMMENT '对应的交易记录',
   `QUANTITY` INT NULL COMMENT '该商品在这个Order中的购买数量',
@@ -365,7 +365,7 @@ COMMENT = '一个订单，可以有多个商品；\n商品也同时会出现在�
 -- Table `shoppingmall`.`IntegralTransaction_product`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `shoppingmall`.`IntegralTransaction_product` (
-  `ID` VARCHAR(48) NULL COMMENT '编号',
+  `ID` VARCHAR(48) NOT NULL COMMENT '编号',
   `PRODUCT_ID` VARCHAR(48) NOT NULL COMMENT '交易的商品编号',
   `TRANSACTION_ID` VARCHAR(48) NOT NULL COMMENT '对应的积分交易编号',
   `QUANTITY` INT NULL COMMENT '商品交易的数量',
