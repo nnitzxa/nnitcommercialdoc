@@ -224,8 +224,10 @@ Redis中存储的数据是实时的。针对“会员”的信息，会员的基
         0. 作用：APP用户通过折扣力度来排序
         1. 采用的Redis数据结构：Sorted Sets
         2. 格式
-            key: discounts
-          value: discounts:discountSort
+            key: Discounts:discountSort
+          value: 
+                key：discountId
+              value: discount_value
           
            |-- Discount:discountSort ------zset-|
 		   |   discountId : discount_value      |
@@ -266,6 +268,21 @@ Redis中存储的数据是实时的。针对“会员”的信息，会员的基
             新创建的放置在Redis和MySQL中
             因为数据不会很多。所有的数据没有过期时间
             业务上过期的数据从Redis中清除
+            
+    发布Groupon的Redis结构：
+        1. 采用的Redis数据结构：Sorted Sets
+        2. 格式
+            Key：Hot_Groupons
+          value：Groupon Id : release_date_value
+           
+           说明： release_date_value: 
+                    不是一个日期，
+                    通过日期计算出来的一个long型的值
+                    当前时间的毫秒数+1000
+           
+           |-- Hot_Groupons -------------zset-|
+		   |   grouponId : release_date_value |
+           |----------------------------------|
             
     Groupon_Order表：
         1. 采用的Redis数据结构：List
