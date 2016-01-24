@@ -207,6 +207,7 @@ Redis中存储的数据是实时的。针对“会员”的信息，会员的基
                
 2.2 商铺折扣
     discount表：
+        0. 每个折扣对应的商品和折扣值（如果5折，折扣值就是5）
         1. 采用的Redis数据结构：Hash
         2. 格式
             Key: Discount:discountId (id要替换)
@@ -236,6 +237,13 @@ Redis中存储的数据是实时的。针对“会员”的信息，会员的基
            |-- Discount:discountSort ------zset-|
 		   |   discountId : discount_value      |
            |------------------------------------|
+           
+           
+    discount表：
+        0. 作用：商家发布的所有的折扣都放置在此，
+                 APP用户直接查看
+        1. 采用的Redis数据结构：
+           
         
 2.3 商品
     product表：
