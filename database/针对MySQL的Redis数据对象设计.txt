@@ -32,12 +32,36 @@ Redis中存储的数据是实时的。针对“会员”的信息，会员的基
 			  |   column : value             |
               |------------------------------|
               
+              测试数据：
+              key: 
+                Member:gST8epDEBF8ep4xdcJcGo2
+              values:
+                        ID gST8epDEBF8ep4xdcJcGo2
+                cell_phone 13612077384
+                 nick_name jaly
+                 password  123456
+               session_id  abd1f3b4-c4f4-11e5-8f9e-0021ccb4ab5d
               
+              hmset Member:gST8epDEBF8ep4xdcJcGo2 ID gST8epDEBF8ep4xdcJcGo2 cell_phone 13612077384 nick_name jaly password  123456 session_id abd1f3b4-c4f4-11e5-8f9e-0021ccb4ab5d
+              
+              注册后的用户放在这个对象里,
+              用来匹配手机号码和用户的ID。
+              因为用户登录，基本都是通过手机号码登陆（目前才有这个唯一的方式）
+                
                  Key: cellphone
                Value: memberId
               |-- Member:cellphone -----hash-|
 			  |   cellphone : memberId       |
               |------------------------------|
+              
+              Key:
+                Member:cellphone
+              Value:
+                13612077384 gST8epDEBF8ep4xdcJcGo2
+              
+              hmset Member:cellphone 13612077384 gST8epDEBF8ep4xdcJcGo2
+              hset Member:cellphone 13612077384 gST8epDEBF8ep4xdcJcGo2
+              
               
 			3. 存储原则
                所有新注册的会员的都放在Redis的内存中。
@@ -45,18 +69,19 @@ Redis中存储的数据是实时的。针对“会员”的信息，会员的基
                
                用户注册后、登录后（如果这个结构中没有对应数据），
                系统需要把用户的详细信息放置到这个结构中
-               
+               用户登录前，先查询对应的号码是否已经存在（被注册了）
+               如果存在，提示用户该手机号码已经注册，需要用别的号码
                
     Member手机号码表：
             用来表示这个号码是否已经使用过了。注册时使用这个对象
             1. 采用的Redis数据结构：Set
             2. 格式
-                 Key: Member:cellphone
+                 Key: Member:used_cellphone
                value: member's cell phone number
                
-              |-- Member:cellphone -----Set-|
-			  |   cell phone number         |
-              |-----------------------------|
+              |-- Member:used_cellphone --Set-|
+			  |   cell phone number           |
+              |-------------------------------|
     
     ++++++++++++++++++++++++++++++++++++++++++++++++++
     
@@ -263,6 +288,26 @@ Redis中存储的数据是实时的。针对“会员”的信息，会员的基
            则新存放到redis中
            
 2.4 团购
+
+    所有的团购信息，都发送到这个set里
+    
+    |---Groupons ---------- zset-|
+    | groupon json  : grouponId  |
+    |----------------------------|
+    
+    所有用户都从这个列表里读取团购信息
+    
+    groupon 的json内容：
+    {
+    "shopName": xxxx
+    “name": xxxx
+    "origin_price" : 1000
+    "new_price": 800
+    "pic": url
+    "discount": double
+    }
+    
+
     Groupon表：
         1. 采用的Redis数据结构：Hash
            所有的有效的团购信息放置在Redis中
