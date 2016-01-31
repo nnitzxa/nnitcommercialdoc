@@ -1,5 +1,18 @@
 针对MySQL的Redis数据对象设计
 
+
+///////////////////////////////////////////////////////
+//                                                   //
+// Redis对象的使用者，针对的是APP的用户。            //
+// 后台系统得到APP终端用户的请求，才从Redis          //
+// 中提取相应数据，为了提高用户体验。                //
+//                                                   //
+// 后台管理界面也可使用。但是一般的原则，            //
+// 是优先考虑从Database中提取数据。                  //
+// 因为后台管理人员对用户体验要求不如APP的终端用户高 //
+//                                                   //
+///////////////////////////////////////////////////////
+
 Redis中存储的数据是实时的。针对“会员”的信息，会员的基本信息会放在Redis的内存中，
 积分交易信息不存放在Redis中。
 
@@ -10,7 +23,7 @@ Redis中存储的数据是实时的。针对“会员”的信息，会员的基
 	Member表： 
 	        1. 采用的Redis数据结构： Hash
 			2. 格式
-			    Key： Member: memberId
+			    Key： Member: memberId (id要替换)
 			  value:
 			        Key: columName
 			      value: columValue
@@ -18,17 +31,115 @@ Redis中存储的数据是实时的。针对“会员”的信息，会员的基
 			  |-- Member:memberId ------hash-|
 			  |   column : value             |
               |------------------------------|
+              
+              测试数据：
+              key: 
+                Member:gST8epDEBF8ep4xdcJcGo2
+              values:
+                        ID gST8epDEBF8ep4xdcJcGo2
+                cell_phone 13612077384
+                 nick_name jaly
+                 password  123456
+               session_id  abd1f3b4-c4f4-11e5-8f9e-0021ccb4ab5d
+              
+              hmset Member:gST8epDEBF8ep4xdcJcGo2 ID gST8epDEBF8ep4xdcJcGo2 cell_phone 13612077384 nick_name jaly password  123456 session_id abd1f3b4-c4f4-11e5-8f9e-0021ccb4ab5d
+              
+              注册后的用户放在这个对象里,
+              用来匹配手机号码和用户的ID。
+              因为用户登录，基本都是通过手机号码登陆（目前才有这个唯一的方式）
+                
+                 Key: cellphone
+               Value: memberId
+              |-- Member:cellphone -----hash-|
+			  |   cellphone : memberId       |
+              |------------------------------|
+              
+              Key:
+                Member:cellphone
+              Value:
+                13612077384 gST8epDEBF8ep4xdcJcGo2
+              
+              hmset Member:cellphone 13612077384 gST8epDEBF8ep4xdcJcGo2
+              hset Member:cellphone 13612077384 gST8epDEBF8ep4xdcJcGo2
+              
+              
+			3. 存储原则
+               所有新注册的会员的都放在Redis的内存中。
+               过期时间为24小时。
+               
+               用户注册后、登录后（如果这个结构中没有对应数据），
+               系统需要把用户的详细信息放置到这个结构中
+               用户登录前，先查询对应的号码是否已经存在（被注册了）
+               如果存在，提示用户该手机号码已经注册，需要用别的号码
+               
+    Member手机号码表：
+            用来表示这个号码是否已经使用过了。注册时使用这个对象
+            1. 采用的Redis数据结构：Set
+            2. 格式
+                 Key: Member:used_cellphone
+               value: member's cell phone number
+               
+              |-- Member:used_cellphone --Set-|
+			  |   cell phone number           |
+              |-------------------------------|
+    
+    ++++++++++++++++++++++++++++++++++++++++++++++++++
+    
+    用户登录：
+            1. 采用的Redis数据结构：Hash
+            2. 格式
+                 Key：Login:members
+               value: 
+                     Key: mobileNum
+                   value: memberId
+                   
+              |-- Login:members ------hash-|
+			  |   mobileNum : memberId     |
+              |----------------------------|
+            
+            3. 存储原则
+               所有的注册会员信息都放在Redis内存中。
+               永不过期
+               
+            4. 使用方法
+               用户登录，一律使用手机号码登陆
+               用户登录系统时，先从这个Redis的结构中寻找对应的memberId。
+               因为所有的注册用户对应的数据都在内存中，如果内存中没有，
+               就是用户没有注册。
+               如果找到了对应的memberId，就可以从Member:memberId这个Redis
+               对象中提取用户的详细信息。
+               如果系统重启，需要把这个信息重新从数据库或者Redis的快照中
+               重载到Redis内存中
+               
 
 1.2 会员订单信息
 	Order表：
-	        1. 采用的Redis数据结构：List
+	        1. 采用的Redis数据结构：Hash
 	        2. 格式
-	            Key: Order:MemberId
-	          value: GOODS_ID:ORDER_DATETIME:AMOUNT:STATUS
+	            Key: Order:MemberId (id要替换)
+	          value: 
+                    Key: columName
+			      value: columValue 
 
-	          |-- Order:MemberId -------------------- List -|
-	          |   ID:GOODS_ID:ORDER_DATETIME:AMOUNT:STATUS  |
-	          |---------------------------------------------|
+	          |-- Order:MemberId ---- Hash -|
+	          |   columName: columValue     |
+	          |-----------------------------|
+			  
+		    3. 存储原则
+			  每个新生成的Order数据，存储在Redis的内存。
+			  每条Order数据的过期时间为30分钟。
+              用户搜索自己的订单后，数据也要防止在Redis中
+              
+            4. 数据提取内容
+               需要从Order表、order_product表、product表, DISCOUNT表
+               中提取相应的数据
+               Order：
+                   ID, ORDER_DETETIME, AMOUNT, STATUS,DISCOUNT
+               ORDER_PRODUCT:
+                   QUANTITY
+               PRODUCT:
+                   PRODUCT_NAME
+                   
 
 1.3 会员积分
 	Integral表：
@@ -37,31 +148,243 @@ Redis中存储的数据是实时的。针对“会员”的信息，会员的基
 				key: Integral:MemberId
 			  value: Balance
 
-			  |-- Integral:MemberId ------- String-|
-			  |   Balance                          |
-			  |------------------------------------|
+			  |-- Integral:MemberId --- String-|
+			  |   Balance                      |
+			  |--------------------------------|
+			  
+			3. 存储原则
+			   每个人有默认的一个Integral(balance = 0)。
+			   但是，初始化时，Redis中不存储此对象。只有用户
+			   查看Integral时才从Database里提取，并存在Redis
+			   中。
+			   每个用户的Integral的数据的过期时间为10分钟。
 
 1.4 会员优惠券
 	Couponbackage表：
 			1. 采用的Redis数据结构： Set
 			2. 格式
-				key：Couponbackage:MemberId
+				key：Couponbackage:MemberId (id要替换)
 			  value: id
 
-			  |-- Couponbackage:MemberId ----- Set----|
-			  |   Id                                  |
-			  |---------------------------------------|
+			  |-- Couponbackage:MemberId -- Set-|
+			  |   Id                            |
+			  |---------------------------------|
+			  
+			3. 存储原则
+			   用户在领用优惠券时才把数据放在Redis的内存中。
+			   如果用户已经有了一些优惠券，如果Redis中没有相关
+			   记录，则此时再去Database中load数据到redis中。
+			   每个用户的Couponbackage数据的过期时间为10分钟。
+               
+1.5 会员消息
+    Message
+        未读消息
+            1. 采用的Redis数据结构：Set
+            2. 格式
+                Key: Message:memberId
+              value: message_id
+              
+              |-- Message:new:memberId -- Set-|
+			  |   message_id                  |
+			  |-------------------------------|
+        
+        全部消息
+            1. 采用的Redis数据结构：Set
+            2. 格式
+                Key: Message:memberId
+              value: message_id
+              
+              |-- Message:memberId -- Set-|
+			  |   message_id              |
+			  |---------------------------|
 
-2. 字典表
+1.6 收藏商家
+    
+       1. 采用的Redis数据结构：Set
+       2. 格式
+            Key: Favors:memberId
+          value: shopId
+          
+          |-- Favors:memberId -- Set-|
+		  |   shopId                 |
+		  |--------------------------|
+
+2. 商铺表
+
+2.1 商铺
+    Shop表：
+        1. 采用的Redis数据结构：Hash
+        2. 格式
+             Key： Shop: shopId (id要替换)
+		   value:
+			        Key: columName
+			      value: columValue
+
+			  |-- Shop: shopId ------hash-|
+			  |   column : value          |
+              |---------------------------|
+			
+	    3. 存储原则
+           所有新注册的商铺的都放在Redis的内存中。
+           过期时间为24小时。
+           
+           最新被查看的店铺的信息，也要放在这个Redis对象中
+               
+2.2 商铺折扣
+    discount表：
+        0. 每个折扣对应的商品和折扣值（如果5折，折扣值就是5）
+        1. 采用的Redis数据结构：Hash
+        2. 格式
+            Key: Discount:discountId (id要替换)
+          value:
+                 Key: production_ID
+               value: DISCOUNT_VALUE
+               
+           |-- Discount:discountId ------hash---|
+		   |   production_ID : DISCOUNT_VALUE   |
+           |------------------------------------|
+           
+        3. 存储原则
+           新增加的折扣信息会进入Redis内存。
+           过期时间为24小时。
+           
+    ++++++++++++++++++++++++++++++++++++++++++++++++++      
+    
+    discount表：
+        0. 作用：APP用户通过折扣力度来排序
+        1. 采用的Redis数据结构：Sorted Sets
+        2. 格式
+            key: Discounts:discountSort
+          value: 
+                key：discountId
+              value: discount_value
+          
+           |-- Discount:discountSort ------zset-|
+		   |   discountId : discount_value      |
+           |------------------------------------|
+           
+           
+    discount表：
+        0. 作用：商家发布的所有的折扣都放置在此，
+                 APP用户直接查看
+        1. 采用的Redis数据结构：
+           
+        
+2.3 商品
+    product表：
+        1. 采用的Redis数据结构：List
+           每个商铺有自己的一个商品列表
+        2. 格式
+            key：Product:shopId
+          value: productId
+          
+          |-- Product:shopId ---List-|
+		  |   productId              |
+          |--------------------------|
+         
+        3. 存储原则
+           商铺增加一个商品，需要把id信息更新到这个redis对象中
+           用户查看一个商品时，如果redis对象中没有对应的数据，
+           则新存放到redis中
+           
+2.4 团购
+
+    所有的团购信息，都发送到这个set里
+    
+    |---Groupons ---------- zset-|
+    | groupon json  : grouponId  |
+    |----------------------------|
+    
+    所有用户都从这个列表里读取团购信息
+    
+    groupon 的json内容：
+    {
+    "shopName": xxxx
+    “name": xxxx
+    "origin_price" : 1000
+    "new_price": 800
+    "pic": url
+    "discount": double
+    }
+    
+
+    Groupon表：
+        1. 采用的Redis数据结构：Hash
+           所有的有效的团购信息放置在Redis中
+        2. 格式
+            Key: Groupon:ID
+          value:
+                 Key: columName
+			   value: columValue
+               
+            |-- Groupon:ID -------hash-|
+		    |   columName : columValue |
+            |--------------------------|
+               
+        3. 存储原则
+            新创建的放置在Redis和MySQL中
+            因为数据不会很多。所有的数据没有过期时间
+            业务上过期的数据从Redis中清除
+            
+    发布Groupon的Redis结构：
+        1. 采用的Redis数据结构：Sorted Sets
+        2. 格式
+            Key：Hot_Groupons
+          value：Groupon Id : release_date_value
+           
+           说明： release_date_value: 
+                    不是一个日期，
+                    通过日期计算出来的一个long型的值
+                    当前时间的毫秒数+1000
+           
+           |-- Hot_Groupons -------------zset-|
+		   |   grouponId : release_date_value |
+           |----------------------------------|
+            
+    Groupon_Order表：
+        1. 采用的Redis数据结构：List
+        2. 格式
+            Key: GrouponOrder:memberId
+          value: 
+                 grouponId
+                 
+            |- GrouponOrder:memberId -List-|
+		    |  grouponId                   |
+            |------------------------------|
+            
+        3. 存储原则
+            用户购买了一个团购后，这个数据放置在Redis中；
+            用户搜索已购买的团购信息时，把数据放在这个Redies中
+            数据过期时间为30分钟
+
+3. 字典表
    字典表的数据不多，每条记录都作为Redis中的一个元素放在内存中
-2.1 
-	TypeAndStatus表
+   
+3.1 
+	Type_Status表
+	    1. 采用的Redis数据结构：String
+	    2. 格式
+		    Key: TypeAndStatus:TypeAndStatusId
+		  Value: LABEL
 
-	1. 采用的Redis数据结构：String
-	2. 格式
-		  Key: TypeAndStatus:TypeAndStatusId
-		Value: LABEL:SHORT_LABEL
-
-		|-- TypeAndStatus:typeAndStatusId --- String-|
-		|   LABEL:SHORT_LABEL                        |
-		|--------------------------------------------|
+		      |-- TypeAndStatus:typeAndStatusId --- String-|
+		      |   LABEL                                    |
+		      |--------------------------------------------|
+              
+        3. 存储原则
+           表中的所有数据在系统启动时，就装在到Redis的内存中，
+           并永不过期
+        
+3.2 商铺类别
+    Category表
+        1. 采用的Redis数据结构：String
+        2. 格式
+             Key: Category:categoryId
+           value: Label
+              |-- Category:categoryId --- String-|
+		      |   LABEL                          |
+		      |----------------------------------|
+              
+        3. 存储原则
+           表中的所有数据在系统启动时，就装在到Redis的内存中，
+           并永不过期
